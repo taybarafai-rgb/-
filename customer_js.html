@@ -73,5 +73,32 @@
     }
   });
 
+  // Affiliate param handling: store ?ref=REP_CODE in localStorage for later use when placing orders
+  (function() {
+    function getQueryParam(name) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name) || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    const repFromUrl = getQueryParam('ref');
+    if (repFromUrl) {
+      try { localStorage.setItem('affiliateRef', repFromUrl); } catch (e) { /* ignore storage errors */ }
+    }
+
+    window.AppAffiliate = {
+      getStoredRef() {
+        try { return localStorage.getItem('affiliateRef') || ''; } catch (e) { return ''; }
+      },
+
+      clearStoredRef() {
+        try { localStorage.removeItem('affiliateRef'); } catch (e) { /* ignore */ }
+      }
+    };
+  })();
+
   document.addEventListener('DOMContentLoaded', () => ProductSearchPage.init());
 </script>
