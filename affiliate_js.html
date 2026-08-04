@@ -1,3 +1,103 @@
 <script>
-  console.log('Affiliate panel base loaded.');
+  (function(){
+    // Helper: read ?ref= from URL
+    function getQueryParam(name) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name) || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function showMissingElementsWarning(missingIds) {
+      const msg = 'affiliate_js: المان‌های مورد نیاز برای نمایش پروفایل نماینده یافت نشد: ' + missingIds.join(', ') + "\n\nبرای نمایش درست، لطفاً المان‌های زیر را به فایل affiliate_dashboard.html اضافه کنید:\n" + missingIds.map(id => `<div id=\"${id}\"></div>`).join('\n');
+      // Don't modify DOM; inform via console and alert so developer knows to update HTML.
+      console.warn(msg);
+      try { alert(msg); } catch (e) { /* ignore */ }
+    }
+
+    function renderProfile(rep, commissions) {
+      const nameEl = document.getElementById('affiliate-name');
+      const percentEl = document.getElementById('affiliate-percent');
+      const regEl = document.getElementById('affiliate-registered');
+      const listEl = document.getElementById('affiliate-commissions');
+
+      const missing = [];
+      if (!nameEl) missing.push('affiliate-name');
+      if (!percentEl) missing.push('affiliate-percent');
+      if (!regEl) missing.push('affiliate-registered');
+      if (!listEl) missing.push('affiliate-commissions');
+
+      if (missing.length) {
+        showMissingElementsWarning(missing);
+        // still log data to console
+        console.log('Representative profile:', rep);
+        console.log('Commissions:', commissions);
+        return;
+      }
+
+      // Map likely column names from Config; attempt common keys
+      const firstName = rep['نام'] || rep['firstName'] || rep['first_name'] || '';
+      const lastName = rep['نام خانوادگی'] || rep['lastName'] || rep['last_name'] || '';
+      const percent = rep['درصد پورسانت'] || rep['percent'] || rep['commissionPercent'] || '';
+      const registered = rep['تاریخ ثبت'] || rep['تاریخ'] || rep['created_at'] || '';
+
+      nameEl.textContent = (firstName + (lastName ? ' ' + lastName : '')).trim() || '—';
+      percentEl.textContent = percent !== '' ? percent + '%' : '—';
+      regEl.textContent = registered || '—';
+
+      // Clear list
+      listEl.innerHTML = '';
+      if (!Array.isArray(commissions) || commissions.length === 0) {
+        listEl.textContent = 'هیچ پورسانتی یافت نشد.';
+        return;
+      }
+
+      commissions.forEach(c => {
+        const div = document.createElement('div');
+        const orderCode = c['کد سفارش'] || c.orderCode || c['orderCode'] || '';
+        const sale = c['مبلغ فروش'] || c.saleAmount || c['saleAmount'] || 0;
+        const comm = c['مبلغ پورسانت'] || c.commissionAmount || c['commissionAmount'] || 0;
+        const status = c['وضعیت'] || c.status || '';
+        div.textContent = `سفارش: ${orderCode} — مبلغ فروش: ${sale} — پورسانت: ${comm} — وضعیت: ${status}`;
+        listEl.appendChild(div);
+      });
+    }
+
+    // Main
+    const repCode = (function(){
+      try { const p = new URLSearchParams(window.location.search); return p.get('ref') || ''; } catch(e){ return ''; }
+    })();
+    if (!repCode) {
+      console.warn('affiliate_js: no ?ref= provided in URL. Pass ?ref=REP_CODE to load a representative profile.');
+      return;
+    }
+
+    // Call apiGetAffiliateProfile first (priority), fallback to getCommissionsByRep if needed
+    AppClient.call('apiGetAffiliateProfile', [repCode])
+      .then(res => {
+        if (!res || !res.success) {
+          console.error('apiGetAffiliateProfile error:', res && res.message);
+          // fallback: try getCommissionsByRep only to show commissions
+          AppClient.call('getCommissionsByRep', [repCode]).then(list => {
+            console.log('Commissions fallback:', list);
+            // render with representative null
+            renderProfile({}, list || []);
+          }).catch(err => console.error('getCommissionsByRep fallback error', err));
+          return;
+        }
+
+        const rep = res.data && res.data.representative ? res.data.representative : res.data || {};
+        const commissions = res.data && res.data.commissions ? res.data.commissions : [];
+        renderProfile(rep, commissions);
+      })
+      .catch(err => {
+        console.error('Error calling apiGetAffiliateProfile', err);
+        // fallback to commissions only
+        AppClient.call('getCommissionsByRep', [repCode])
+          .then(list => renderProfile({}, list || []))
+          .catch(e => console.error('getCommissionsByRep error', e));
+      });
+  })();
 </script>
