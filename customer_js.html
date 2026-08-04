@@ -1,0 +1,77 @@
+<script>
+  const ProductSearchPage = Object.freeze({
+    init() {
+      this.form = document.getElementById('product-search-form');
+      this.message = document.getElementById('product-message');
+      this.result = document.getElementById('product-result');
+      this.image = document.getElementById('product-image');
+
+      this.form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        this.search();
+      });
+    },
+
+    search() {
+      const productCode = document.getElementById('product-code').value.trim();
+      if (!productCode) {
+        this.showMessage('لطفاً کد محصول را وارد کنید.', true);
+        return;
+      }
+
+      this.showMessage('در حال جستجوی محصول...');
+      this.hideProduct();
+
+      AppClient.call('apiCustomerFindProductByCode', [productCode])
+        .then((response) => {
+          if (!response || !response.success) {
+            this.showMessage((response && response.message) || 'کد محصول صحیح نیست یا این محصول موجود نمی‌باشد.', true);
+            return;
+          }
+
+          this.showProduct(response.data);
+          this.showMessage('محصول پیدا شد.');
+        })
+        .catch(() => {
+          this.showMessage('در ارتباط با سرور خطا رخ داد. لطفاً دوباره تلاش کنید.', true);
+        });
+    },
+
+    showProduct(product) {
+      document.getElementById('product-name').textContent = product.name || '-';
+      document.getElementById('product-result-code').textContent = product.code || '-';
+      document.getElementById('product-material').textContent = product.material || '-';
+      document.getElementById('product-size').textContent = product.size || '-';
+      document.getElementById('product-price').textContent = this.formatPrice(product.price);
+      document.getElementById('product-description').textContent = product.description || '-';
+      document.getElementById('product-stock-status').textContent = product.stockStatus || '-';
+
+      if (product.imageUrl) {
+        this.image.src = product.imageUrl;
+        this.image.hidden = false;
+      } else {
+        this.image.removeAttribute('src');
+        this.image.hidden = true;
+      }
+
+      this.result.hidden = false;
+    },
+
+    hideProduct() {
+      this.result.hidden = true;
+    },
+
+    showMessage(text, isError) {
+      this.message.textContent = text || '';
+      this.message.classList.toggle('error', Boolean(isError));
+    },
+
+    formatPrice(value) {
+      const numberValue = Number(value);
+      if (Number.isNaN(numberValue)) return value || '-';
+      return `${numberValue.toLocaleString('fa-IR')} تومان`;
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => ProductSearchPage.init());
+</script>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?!= include('common_css'); ?>
+    <?!= include('customer_css'); ?>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="card customer-search-card">
+        <h1>لبیک یا مهدی</h1>
+        <p class="muted">کد محصول درج‌شده در کاتالوگ را وارد کنید تا اطلاعات محصول نمایش داده شود.</p>
+
+        <form id="product-search-form" class="product-search-form">
+          <label for="product-code">کد محصول</label>
+          <div class="search-row">
+            <input id="product-code" name="productCode" type="text" inputmode="text" placeholder="مثلاً 10M146" autocomplete="off" required>
+            <button class="button" type="submit">جستجو</button>
+          </div>
+        </form>
+
+        <p id="product-message" class="message" role="status"></p>
+
+        <article id="product-result" class="product-result" hidden>
+          <img id="product-image" class="product-image" alt="تصویر محصول" hidden>
+          <dl class="product-fields">
+            <div><dt>نام محصول</dt><dd id="product-name"></dd></div>
+            <div><dt>کد محصول</dt><dd id="product-result-code"></dd></div>
+            <div><dt>جنس</dt><dd id="product-material"></dd></div>
+            <div><dt>سایز</dt><dd id="product-size"></dd></div>
+            <div><dt>قیمت</dt><dd id="product-price"></dd></div>
+            <div><dt>توضیحات</dt><dd id="product-description"></dd></div>
+            <div><dt>وضعیت موجودی</dt><dd id="product-stock-status"></dd></div>
+          </dl>
+        </article>
+      </section>
+    </main>
+    <?!= include('common_js'); ?>
+    <?!= include('customer_js'); ?>
+  </body>
+</html>

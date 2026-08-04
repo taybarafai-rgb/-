@@ -1,0 +1,11 @@
+<script>
+  const AppClient = Object.freeze({
+    call(serverFunction, args = []) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)[serverFunction](...args);
+      });
+    }
+  });
+</script>
